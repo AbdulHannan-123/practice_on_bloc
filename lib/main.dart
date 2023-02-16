@@ -37,6 +37,41 @@ class LoadPersonUrl implements LoadAction {
   const LoadPersonUrl({required this.url}) : super();
 }
 
+@immutable     // State
+class FetchResults {
+  final Iterable<Person> persons;
+  final bool isRetrivedFromCache;     // to make sure that we wouldn't recll the api after fatches the results
+
+  const FetchResults({
+    required this.persons,
+    required this.isRetrivedFromCache,
+  });
+
+  @override
+  String toString() => 'FetchResultsc (isRetrivedFromCache =$isRetrivedFromCache , persons = $persons)';
+
+}
+
+
+class PersonBloc extends Bloc<LoadAction,FetchResults?>{
+  // PersonBloc() : super(null);
+  final Map<PersonUrl, Iterable<Person>> _cache = {};
+  PersonBloc(super.initialState){
+    on<LoadPersonUrl>((event, emit) {      //event is the input of bloc andemit is output
+        final url = event.url;
+        if (_cache.containsKey(url)) {
+          //we know that we hve the value in cache
+          final cachePersons = _cache[url]!;
+          final result = FetchResults(persons: cachePersons, isRetrivedFromCache: true);
+
+          emit(result);
+          
+        }
+    });
+  }
+
+}
+
 
 @immutable
 class Person {
