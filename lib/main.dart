@@ -57,7 +57,7 @@ class PersonBloc extends Bloc<LoadAction,FetchResults?>{
   // PersonBloc() : super(null);
   final Map<PersonUrl, Iterable<Person>> _cache = {};
   PersonBloc(super.initialState){
-    on<LoadPersonUrl>((event, emit) {      //event is the input of bloc andemit is output
+    on<LoadPersonUrl>((event, emit) async {      //event is the input of bloc andemit is output
         final url = event.url;
         if (_cache.containsKey(url)) {
           //we know that we hve the value in cache
@@ -66,6 +66,12 @@ class PersonBloc extends Bloc<LoadAction,FetchResults?>{
 
           emit(result);
           
+        }else{
+          final person = await getPerson(url.urlString);
+          _cache[url] = person;
+          final result = FetchResults(persons: person, isRetrivedFromCache: false);
+
+          emit(result); 
         }
     });
   }
