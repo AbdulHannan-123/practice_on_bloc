@@ -5,6 +5,11 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:developer' as devtools show log;
+
+extension Log on Object{
+  void log()=> devtools.log(toString());
+}
 
 void main() {
   runApp(const MyApp());
@@ -19,7 +24,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const HomePage(),
+      home: BlocProvider(
+        create: (_) => PersonBloc(),
+        child: HomePage(),
+        ),
     );
   }
 }
@@ -56,7 +64,7 @@ class FetchResults {
 class PersonBloc extends Bloc<LoadAction,FetchResults?>{
   // PersonBloc() : super(null);
   final Map<PersonUrl, Iterable<Person>> _cache = {};
-  PersonBloc(super.initialState){
+  PersonBloc() : super(null){
     on<LoadPersonUrl>((event, emit) async {      //event is the input of bloc andemit is output
         final url = event.url;
         if (_cache.containsKey(url)) {
@@ -70,7 +78,6 @@ class PersonBloc extends Bloc<LoadAction,FetchResults?>{
           final person = await getPerson(url.urlString);
           _cache[url] = person;
           final result = FetchResults(persons: person, isRetrivedFromCache: false);
-
           emit(result); 
         }
     });
@@ -112,6 +119,16 @@ enum PersonUrl {
   person2,
 }
 
+// const List<String> names = ["foo","bar"];   // list it self is iterable
+
+// void testIt(){
+//   final baz = names[2];
+// }
+
+extension Subscript<T> on Iterable<T>{
+  T? operator[](int index) => length > index ?elementAt(index) :null; 
+}
+
 extension UrlString on PersonUrl{
   String get urlString{
     switch (this) {               // this identify the instance of PersonUrl
@@ -136,6 +153,57 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title:const Text('Bloc Cach concept'),
+      ),
+      body: Column(
+        children: [
+          Row(
+            children: [
+              TextButton(
+              onPressed: (){
+                 context.read<PersonBloc>().add(const LoadPersonUrl(url: PersonUrl.person1));     // because peson bloc req a load action
+              }, 
+              child: const Text("Load json 1"),
+              ),
+
+
+              TextButton(
+              onPressed: (){
+                context.read<PersonBloc>().add(
+                  LoadPersonUrl(
+                    url: PersonUrl.person2 ,
+                    ),
+                );
+              }, 
+              child: const Text("Load json 2"),
+              ),
+            ],
+          ),
+          BlocBuilder<PersonBloc , FetchResults?>(
+            buildWhen: (previous, current) {      // it decide either you want to rebuild the builder or not by just true or false conditions 
+              return previous?.persons != current?.persons;
+            },
+            builder: (context, fetchResult) {
+              fetchResult?.log();
+              final persons = fetchResult?.persons;
+              if(persons == null){
+                return const SizedBox();
+              }
+              return Expanded(
+                child: ListView.builder(
+                  itemCount: persons.length,
+                  itemBuilder:(context, index) {
+                    final person = persons[index]!;
+                    print(person.name);
+                    return ListTile(
+                      title: Text(person.name),
+                      // subtitle: Text(person.age.toString()),
+                    );   // it uses our subscript method above because its iterable
+                  },
+                ),
+              );
+            },
+            ),
+        ],
       ),
     );
   }
