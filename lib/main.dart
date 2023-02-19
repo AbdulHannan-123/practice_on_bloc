@@ -99,6 +99,9 @@ class Person {
   Person.fromJson(Map<String, dynamic> json)
     :name = json['name'] as String,
     age = json['age'] as int;
+
+  @override
+  String toString() => "Person (name = $name , age = $age)";
   
 }
 
@@ -133,7 +136,7 @@ extension UrlString on PersonUrl{
   String get urlString{
     switch (this) {               // this identify the instance of PersonUrl
       case PersonUrl.person1:
-          return 'http://127.0.0.1:5500/api/person1.json';
+          return "http://127.0.0.1:5500/api/person1.json";
       case PersonUrl.person2:
           return 'http://127.0.0.1:5500/api/person2.json';
         
